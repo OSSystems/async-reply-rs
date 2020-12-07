@@ -1,0 +1,12 @@
+[package]
+name = "untitled-typed-async-channel"
+version = "0.1.0"
+authors = ["Jonathas-Conceicao <jonathas.conceicao@ossystems.com.br>"]
+edition = "2018"
+
+[dependencies]
+async-std = { version = "1", features = ["unstable"] }
+derive_more = { version = "0.99", default-features = false, features = ["display", "error"] }
+
+[dev-dependencies]
+async-std = { version = "1", features = ["attributes"] }
