@@ -9,52 +9,52 @@ use std::any::Any;
 
 mod error;
 
-pub fn channel() -> (Sender, Receiver) {
+pub fn endpoints() -> (Requester, Replyer) {
     let (sndr, recv) = sync::channel(10);
     (
-        Sender { inner: sndr },
-        Receiver {
+        Requester { inner: sndr },
+        Replyer {
             buffer: Vec::default(),
             inner: recv,
         },
     )
 }
 
-pub struct Sender {
+pub struct Requester {
     inner: sync::Sender<Box<dyn Any>>,
 }
 
-pub struct Receiver {
+pub struct Replyer {
     buffer: Vec<Box<dyn Any>>,
     inner: sync::Receiver<Box<dyn Any>>,
 }
 
 #[must_use = "RespondeHandle should be used to respond to the received message"]
-pub struct ResponseHandle<T>(sync::Sender<T>);
+pub struct ReplyHandle<T>(sync::Sender<T>);
 
 struct MessageHandle<M: Message> {
     msg: M,
-    sndr: ResponseHandle<M::Response>,
+    sndr: ReplyHandle<M::Response>,
 }
 
 pub trait Message: 'static {
     type Response;
 }
 
-impl Sender {
+impl Requester {
     pub async fn send<M>(&self, msg: M) -> Result<M::Response>
     where
         M: Message,
     {
         let (sndr, recv) = sync::channel::<M::Response>(1);
-        let sndr = ResponseHandle(sndr);
+        let sndr = ReplyHandle(sndr);
         self.inner.send(Box::new(MessageHandle { msg, sndr })).await;
         recv.recv().await.map_err(Error::ReplayError)
     }
 }
 
-impl Receiver {
-    pub async fn recv<M>(&mut self) -> Result<(M, ResponseHandle<M::Response>)>
+impl Replyer {
+    pub async fn recv<M>(&mut self) -> Result<(M, ReplyHandle<M::Response>)>
     where
         M: Message,
     {
@@ -86,14 +86,14 @@ impl Receiver {
     }
 }
 
-impl<T> ResponseHandle<T> {
+impl<T> ReplyHandle<T> {
     pub async fn respond(&self, r: T) {
         self.0.send(r).await;
     }
 }
 
 impl<M: Message> MessageHandle<M> {
-    fn into_tuple(self) -> (M, ResponseHandle<M::Response>) {
+    fn into_tuple(self) -> (M, ReplyHandle<M::Response>) {
         (self.msg, self.sndr)
     }
 }

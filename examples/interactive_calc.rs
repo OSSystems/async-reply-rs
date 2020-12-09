@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use async_std::io;
-use untitled_typed_async_channel as utac;
 
 enum Command {
     Inc,
@@ -11,11 +10,11 @@ enum Command {
     Set,
 }
 
-impl utac::Message for Command {
+impl async_reply::Message for Command {
     type Response = i64;
 }
 
-async fn io_process(sndr: utac::Sender) -> Result<(), Box<dyn std::error::Error>> {
+async fn io_process(req: async_reply::Requester) -> Result<(), Box<dyn std::error::Error>> {
     let stdin = io::stdin();
     let mut line;
     loop {
@@ -38,19 +37,19 @@ SET - Set internal state to 0
                 continue;
             }
         };
-        let val = sndr.send(command).await.unwrap();
+        let val = req.send(command).await.unwrap();
         println!("State: {}", val);
     }
 }
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (sndr, mut recv) = utac::channel();
-    async_std::task::spawn_local(io_process(sndr));
+    let (req, mut rep) = async_reply::endpoints();
+    async_std::task::spawn_local(io_process(req));
 
     let mut state = 0;
     loop {
-        let (command, handle) = recv.recv().await?;
+        let (command, handle) = rep.recv().await?;
         match command {
             Command::Inc => state += 1,
             Command::Dec => state -= 1,

@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use async_std::prelude::FutureExt;
-use untitled_typed_async_channel as utac;
 
 #[derive(Debug)]
 struct Ping(usize);
@@ -11,17 +10,17 @@ struct Ping(usize);
 #[derive(Debug)]
 struct Pong(usize);
 
-impl utac::Message for Ping {
+impl async_reply::Message for Ping {
     type Response = Pong;
 }
 
 #[async_std::main]
 async fn main() {
-    let (sender, mut receiver) = utac::channel();
+    let (req, mut rep) = async_reply::endpoints();
     let fut1 = async move {
         let mut x = 0;
         loop {
-            let res = sender.send(Ping(x)).await.unwrap();
+            let res = req.send(Ping(x)).await.unwrap();
             println!("Pong: {}", res.0);
             x = res.0 + 1;
             if res.0 >= 5 {
@@ -32,7 +31,7 @@ async fn main() {
 
     let fut2 = async move {
         loop {
-            match receiver.recv::<Ping>().await {
+            match rep.recv::<Ping>().await {
                 Ok((msg, handle)) => {
                     println!("Ping: {}", msg.0);
                     handle.respond(Pong(msg.0 + 1)).await;
