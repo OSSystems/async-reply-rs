@@ -20,6 +20,7 @@ pub fn endpoints() -> (Requester, Replyer) {
     )
 }
 
+#[derive(Clone)]
 pub struct Requester {
     inner: sync::Sender<Box<dyn Any + Send>>,
 }
