@@ -21,12 +21,12 @@ pub fn endpoints() -> (Requester, Replyer) {
 }
 
 pub struct Requester {
-    inner: sync::Sender<Box<dyn Any>>,
+    inner: sync::Sender<Box<dyn Any + Send>>,
 }
 
 pub struct Replyer {
-    buffer: Vec<Box<dyn Any>>,
-    inner: sync::Receiver<Box<dyn Any>>,
+    buffer: Vec<Box<dyn Any + Send>>,
+    inner: sync::Receiver<Box<dyn Any + Send>>,
 }
 
 #[must_use = "RespondeHandle should be used to respond to the received message"]
@@ -37,8 +37,8 @@ struct MessageHandle<M: Message> {
     sndr: ReplyHandle<M::Response>,
 }
 
-pub trait Message: 'static {
-    type Response;
+pub trait Message: 'static + Send {
+    type Response: Send;
 }
 
 impl Requester {
@@ -58,7 +58,7 @@ impl Replyer {
     where
         M: Message,
     {
-        let is_message_type = |any: &Box<dyn Any>| any.is::<MessageHandle<M>>();
+        let is_message_type = |any: &Box<dyn Any + Send>| any.is::<MessageHandle<M>>();
         let msg_index = self
             .buffer
             .iter()
