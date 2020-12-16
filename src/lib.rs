@@ -4,7 +4,8 @@
 
 pub use crate::error::{Error, Result};
 
-use async_std::sync;
+use async_std::prelude::FutureExt;
+use async_std::sync::{self, Mutex};
 use std::any::Any;
 
 mod error;
@@ -14,7 +15,7 @@ pub fn endpoints() -> (Requester, Replyer) {
     (
         Requester { inner: sndr },
         Replyer {
-            buffer: Vec::default(),
+            buffer: Mutex::default(),
             inner: recv,
         },
     )
@@ -26,7 +27,7 @@ pub struct Requester {
 }
 
 pub struct Replyer {
-    buffer: Vec<Box<dyn Any + Send>>,
+    buffer: Mutex<Vec<Box<dyn Any + Send>>>,
     inner: sync::Receiver<Box<dyn Any + Send>>,
 }
 
@@ -55,34 +56,36 @@ impl Requester {
 }
 
 impl Replyer {
-    pub async fn recv<M>(&mut self) -> Result<(M, ReplyHandle<M::Response>)>
+    pub async fn recv<M>(&self) -> Result<(M, ReplyHandle<M::Response>)>
     where
         M: Message,
     {
         let is_message_type = |any: &Box<dyn Any + Send>| any.is::<MessageHandle<M>>();
-        let msg_index = self
-            .buffer
-            .iter()
-            .enumerate()
-            .find(|(_, elem)| is_message_type(elem))
-            .map(|(index, _)| index);
-        if let Some(index) = msg_index {
-            // We already buffered a message of this type, so we pop
-            // and return it
-            return Ok(self
-                .buffer
-                .remove(index)
-                .downcast::<MessageHandle<M>>()
-                .unwrap()
-                .into_tuple());
-        }
 
         loop {
-            let msg = self.inner.recv().await.map_err(Error::ReceivError)?;
+            let buffer_search_fut = async {
+                loop {
+                    let mut buffer = self.buffer.lock().await;
+                    let msg_index = buffer
+                        .iter()
+                        .enumerate()
+                        .find(|(_, elem)| is_message_type(elem))
+                        .map(|(index, _)| index);
+                    if let Some(index) = msg_index {
+                        // We have a buffereda message of this type, so we pop
+                        // and return it
+                        return Ok(buffer.remove(index));
+                    }
+                    async_std::task::yield_now().await;
+                }
+            };
+            let channel_search_fut = async { self.inner.recv().await.map_err(Error::ReceivError) };
+
+            let msg = buffer_search_fut.race(channel_search_fut).await?;
             if is_message_type(&msg) {
                 return Ok(msg.downcast::<MessageHandle<M>>().unwrap().into_tuple());
             }
-            self.buffer.push(msg);
+            self.buffer.lock().await.push(msg);
         }
     }
 }

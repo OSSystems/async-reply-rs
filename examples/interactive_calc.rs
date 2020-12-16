@@ -44,7 +44,7 @@ SET - Set internal state to 0
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (req, mut rep) = async_reply::endpoints();
+    let (req, rep) = async_reply::endpoints();
     async_std::task::spawn_local(io_process(req));
 
     let mut state = 0;

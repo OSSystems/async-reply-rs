@@ -16,7 +16,7 @@ impl async_reply::Message for Ping {
 
 #[async_std::main]
 async fn main() {
-    let (req, mut rep) = async_reply::endpoints();
+    let (req, rep) = async_reply::endpoints();
     let fut1 = async move {
         let mut x = 0;
         loop {
