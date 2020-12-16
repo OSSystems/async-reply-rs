@@ -21,17 +21,19 @@ pub fn endpoints() -> (Requester, Replyer) {
     )
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Requester {
     inner: sync::Sender<Box<dyn Any + Send>>,
 }
 
+#[derive(Debug)]
 pub struct Replyer {
     buffer: Mutex<Vec<Box<dyn Any + Send>>>,
     inner: sync::Receiver<Box<dyn Any + Send>>,
 }
 
 #[must_use = "RespondeHandle should be used to respond to the received message"]
+#[derive(Debug)]
 pub struct ReplyHandle<T>(sync::Sender<T>);
 
 struct MessageHandle<M: Message> {
