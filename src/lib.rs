@@ -4,14 +4,15 @@
 
 pub use crate::error::{Error, Result};
 
+use async_std::channel;
 use async_std::prelude::FutureExt;
-use async_std::sync::{self, Mutex};
+use async_std::sync::Mutex;
 use std::any::Any;
 
 mod error;
 
 pub fn endpoints() -> (Requester, Replyer) {
-    let (sndr, recv) = sync::channel(10);
+    let (sndr, recv) = channel::bounded(10);
     (
         Requester { inner: sndr },
         Replyer {
@@ -23,18 +24,18 @@ pub fn endpoints() -> (Requester, Replyer) {
 
 #[derive(Debug, Clone)]
 pub struct Requester {
-    inner: sync::Sender<Box<dyn Any + Send>>,
+    inner: channel::Sender<Box<dyn Any + Send>>,
 }
 
 #[derive(Debug)]
 pub struct Replyer {
     buffer: Mutex<Vec<Box<dyn Any + Send>>>,
-    inner: sync::Receiver<Box<dyn Any + Send>>,
+    inner: channel::Receiver<Box<dyn Any + Send>>,
 }
 
 #[must_use = "RespondeHandle should be used to respond to the received message"]
 #[derive(Debug)]
-pub struct ReplyHandle<T>(sync::Sender<T>);
+pub struct ReplyHandle<T>(channel::Sender<T>);
 
 struct MessageHandle<M: Message> {
     msg: M,
@@ -50,7 +51,7 @@ impl Requester {
     where
         M: Message,
     {
-        let (sndr, recv) = sync::channel::<M::Response>(1);
+        let (sndr, recv) = channel::bounded::<M::Response>(1);
         let sndr = ReplyHandle(sndr);
         self.inner.send(Box::new(MessageHandle { msg, sndr })).await;
         recv.recv().await.map_err(Error::ReplayError)

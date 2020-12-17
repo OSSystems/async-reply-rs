@@ -6,6 +6,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, derive_more::Display, derive_more::Error)]
 pub enum Error {
-    ReplayError(async_std::sync::RecvError),
-    ReceivError(async_std::sync::RecvError),
+    ReplayError(async_std::channel::RecvError),
+    ReceivError(async_std::channel::RecvError),
 }
