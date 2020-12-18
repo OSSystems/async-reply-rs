@@ -4,6 +4,7 @@
 
 use async_std::io;
 
+#[derive(Debug)]
 enum Command {
     Inc,
     Dec,
@@ -55,6 +56,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Command::Dec => state -= 1,
             Command::Set => state = 0,
         }
-        handle.respond(state).await;
+        handle.respond(state).await?;
     }
 }

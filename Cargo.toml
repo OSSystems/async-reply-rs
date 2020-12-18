@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 async-std = { version = "1", features = ["unstable"] }
-derive_more = { version = "0.99", default-features = false, features = ["display", "error"] }
+derive_more = { version = "0.99", default-features = false, features = ["display", "error", "from"] }
 
 [dev-dependencies]
 async-std = { version = "1", features = ["attributes"] }

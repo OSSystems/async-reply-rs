@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-pub use crate::error::{Error, Result};
+pub use crate::error::Error;
 
 use async_std::channel;
 use async_std::prelude::FutureExt;
@@ -47,19 +47,27 @@ pub trait Message: 'static + Send {
 }
 
 impl Requester {
-    pub async fn send<M>(&self, msg: M) -> Result<M::Response>
+    pub async fn send<M>(&self, msg: M) -> Result<M::Response, Error<M>>
     where
         M: Message,
     {
         let (sndr, recv) = channel::bounded::<M::Response>(1);
         let sndr = ReplyHandle(sndr);
-        self.inner.send(Box::new(MessageHandle { msg, sndr })).await;
+
+        if let Err(e) = self.inner.send(Box::new(MessageHandle { msg, sndr })).await {
+            // We need to convert it here as we need to unwrap the message
+            // type so the error handling can use the message if need.
+            return Err(Error::SendError(channel::SendError(
+                *e.into_inner().downcast::<M>().unwrap(),
+            )));
+        }
+
         recv.recv().await.map_err(Error::ReplayError)
     }
 }
 
 impl Replyer {
-    pub async fn recv<M>(&self) -> Result<(M, ReplyHandle<M::Response>)>
+    pub async fn recv<M>(&self) -> Result<(M, ReplyHandle<M::Response>), Error<M>>
     where
         M: Message,
     {
@@ -94,8 +102,8 @@ impl Replyer {
 }
 
 impl<T> ReplyHandle<T> {
-    pub async fn respond(&self, r: T) {
-        self.0.send(r).await;
+    pub async fn respond(&self, r: T) -> Result<(), Error<T>> {
+        Ok(self.0.send(r).await?)
     }
 }
 

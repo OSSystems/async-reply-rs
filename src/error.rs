@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-pub type Result<T> = std::result::Result<T, Error>;
-
-#[derive(Debug, derive_more::Display, derive_more::Error)]
-pub enum Error {
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_more::From)]
+pub enum Error<T> {
+    SendError(async_std::channel::SendError<T>),
+    #[from(ignore)]
     ReplayError(async_std::channel::RecvError),
     ReceivError(async_std::channel::RecvError),
 }

@@ -34,7 +34,7 @@ async fn main() {
             match rep.recv::<Ping>().await {
                 Ok((msg, handle)) => {
                     println!("Ping: {}", msg.0);
-                    handle.respond(Pong(msg.0 + 1)).await;
+                    handle.respond(Pong(msg.0 + 1)).await.unwrap();
                 }
                 Err(_) => break,
             }
