@@ -33,7 +33,7 @@ pub struct Replyer {
     inner: channel::Receiver<Box<dyn Any + Send>>,
 }
 
-#[must_use = "RespondeHandle should be used to respond to the received message"]
+#[must_use = "ReplyHandle should be used to respond to the received message"]
 #[derive(Debug)]
 pub struct ReplyHandle<T>(channel::Sender<T>);
 
