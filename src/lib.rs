@@ -2,14 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-pub use crate::error::Error;
-
 use async_std::channel;
 use async_std::prelude::FutureExt;
 use async_std::sync::Mutex;
 use std::any::Any;
-
-mod error;
 
 pub fn endpoints() -> (Requester, Replyer) {
     let (sndr, recv) = channel::bounded(10);
@@ -111,4 +107,12 @@ impl<M: Message> MessageHandle<M> {
     fn into_tuple(self) -> (M, ReplyHandle<M::Response>) {
         (self.msg, self.sndr)
     }
+}
+
+#[derive(Debug, derive_more::Display, derive_more::Error, derive_more::From)]
+pub enum Error<T> {
+    SendError(async_std::channel::SendError<T>),
+    #[from(ignore)]
+    ReplayError(async_std::channel::RecvError),
+    ReceivError(async_std::channel::RecvError),
 }
