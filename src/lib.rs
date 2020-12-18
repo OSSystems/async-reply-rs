@@ -2,11 +2,52 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+//! Allow the sending and reciving of typed messages.
+//!
+//! # Example
+//! ```
+//! # async_std::task::block_on(async {
+//! # use async_std::prelude::FutureExt;
+//! use async_reply::Message;
+//!
+//! #[derive(Debug)]
+//! struct Ping;
+//!
+//! #[derive(Debug)]
+//! struct Pong;
+//!
+//! impl Message for Ping {
+//!     type Response = Pong;
+//! }
+//!
+//! let (requester, replyer) = async_reply::endpoints();
+//!
+//! let ping_fut = async {
+//!     println!("Sending Ping");
+//!     let reply = requester.send(Ping).await.unwrap();
+//!     println!("Received {:?}", reply);
+//! };
+//!
+//! let pong_fut = async {
+//!     let (msg, handler) = replyer.recv::<Ping>().await.unwrap();
+//!     handler.respond(Pong).await.unwrap();
+//!     println!("Replied {:?} with Pong", msg);
+//! };
+//!
+//! ping_fut.join(pong_fut).await;
+//! # });
+//! ```
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
+
 use async_std::channel;
 use async_std::prelude::FutureExt;
 use async_std::sync::Mutex;
 use std::any::Any;
 
+/// Create a [`Requester`] and [`Replyer`] message endpoints which allow the sending
+/// and receiving of typed messages.
 pub fn endpoints() -> (Requester, Replyer) {
     let (sndr, recv) = channel::bounded(10);
     (
@@ -18,17 +59,20 @@ pub fn endpoints() -> (Requester, Replyer) {
     )
 }
 
+/// The requester side of a endpoint.
 #[derive(Debug, Clone)]
 pub struct Requester {
     inner: channel::Sender<Box<dyn Any + Send>>,
 }
 
+/// The replyer side of a endpoint.
 #[derive(Debug)]
 pub struct Replyer {
     buffer: Mutex<Vec<Box<dyn Any + Send>>>,
     inner: channel::Receiver<Box<dyn Any + Send>>,
 }
 
+/// The reply handle to respond to the received message.
 #[must_use = "ReplyHandle should be used to respond to the received message"]
 #[derive(Debug)]
 pub struct ReplyHandle<T>(channel::Sender<T>);
@@ -38,11 +82,14 @@ struct MessageHandle<M: Message> {
     sndr: ReplyHandle<M::Response>,
 }
 
+/// A trait to bind the message and its respective response type.
 pub trait Message: 'static + Send {
+    /// The response type of the message.
     type Response: Send;
 }
 
 impl Requester {
+    /// Send the message and wait its response.
     pub async fn send<M>(&self, msg: M) -> Result<M::Response, Error<M>>
     where
         M: Message,
@@ -63,6 +110,7 @@ impl Requester {
 }
 
 impl Replyer {
+    /// Receives the message and provide the handle to respond back.
     pub async fn recv<M>(&self) -> Result<(M, ReplyHandle<M::Response>), Error<M>>
     where
         M: Message,
@@ -98,6 +146,7 @@ impl Replyer {
 }
 
 impl<T> ReplyHandle<T> {
+    /// Respond back to a received message.
     pub async fn respond(&self, r: T) -> Result<(), Error<T>> {
         Ok(self.0.send(r).await?)
     }
@@ -109,10 +158,20 @@ impl<M: Message> MessageHandle<M> {
     }
 }
 
+/// Encapsulate the errors which can be triggered when sending or receiving a
+/// message.
 #[derive(Debug, derive_more::Display, derive_more::Error, derive_more::From)]
 pub enum Error<T> {
+    /// Error while sending the message.
+    #[display(transparent)]
     SendError(async_std::channel::SendError<T>),
+
+    /// Error to receive the response of sent message.
     #[from(ignore)]
+    #[display(transparent)]
     ReplayError(async_std::channel::RecvError),
+
+    /// Error while receiving the message.
+    #[display(transparent)]
     ReceivError(async_std::channel::RecvError),
 }
