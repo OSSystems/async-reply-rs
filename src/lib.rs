@@ -41,13 +41,11 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
-use async_std::channel;
-use async_std::prelude::FutureExt;
-use async_std::sync::Mutex;
+use async_std::{channel, prelude::FutureExt, sync::Mutex};
 use std::any::Any;
 
-/// Create a [`Requester`] and [`Replyer`] message endpoints which allow the sending
-/// and receiving of typed messages.
+/// Create a [`Requester`] and [`Replyer`] message endpoints which allow the
+/// sending and receiving of typed messages.
 pub fn endpoints() -> (Requester, Replyer) {
     let (sndr, recv) = channel::bounded(10);
     (

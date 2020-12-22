@@ -1,8 +1,16 @@
 [package]
 name = "async-reply"
+description = "Library to handle typed messages and replies"
+authors = ["Jonathas-Conceicao <jonathas.conceicao@ossystems.com.br>", "Otavio Salvador <otavio.salvador@ossystems.com.br>"]
 version = "0.1.0"
-authors = ["Jonathas-Conceicao <jonathas.conceicao@ossystems.com.br>"]
+license = "MIT OR Apache-2.0"
 edition = "2018"
+
+repository = "https://github.com/OSSystems/async-reply-rs"
+documentation = "https://docs.rs/async-reply"
+homepage = "https://github.com/OSSystems/async-reply-rs"
+keywords = ["async", "message", "reply"]
+readme = "README.md"
 
 [dependencies]
 async-std = { version = "1", features = ["unstable"] }
