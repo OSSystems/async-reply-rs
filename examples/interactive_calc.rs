@@ -4,15 +4,12 @@
 
 use async_std::io;
 
-#[derive(Debug)]
+#[derive(Debug, async_reply::Message)]
+#[rtype(response = "i64")]
 enum Command {
     Inc,
     Dec,
     Set,
-}
-
-impl async_reply::Message for Command {
-    type Response = i64;
 }
 
 async fn io_process(req: async_reply::Requester) -> Result<(), Box<dyn std::error::Error>> {

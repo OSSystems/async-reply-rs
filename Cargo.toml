@@ -12,9 +12,24 @@ homepage = "https://github.com/OSSystems/async-reply-rs"
 keywords = ["async", "message", "reply"]
 readme = "README.md"
 
+[workspace]
+members = [".", "async-reply-derive"]
+
+[features]
+default = ["derive"]
+
+# Re-exports derive macros from actix-derive
+derive = ["async-reply-derive"]
+
 [dependencies]
+async-reply-derive = { version = "0.1", optional = true }
 async-std = { version = "1", features = ["unstable"] }
+
 derive_more = { version = "0.99", default-features = false, features = ["display", "error", "from"] }
 
 [dev-dependencies]
 async-std = { version = "1", features = ["attributes"] }
+
+[patch.crates-io]
+async-reply = { path = "." }
+async-reply-derive = { path = "async-reply-derive" }

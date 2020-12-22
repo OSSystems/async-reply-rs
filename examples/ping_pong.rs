@@ -4,15 +4,12 @@
 
 use async_std::prelude::FutureExt;
 
-#[derive(Debug)]
+#[derive(Debug, async_reply::Message)]
+#[rtype(response = "Pong")]
 struct Ping(usize);
 
 #[derive(Debug)]
 struct Pong(usize);
-
-impl async_reply::Message for Ping {
-    type Response = Pong;
-}
 
 #[async_std::main]
 async fn main() {

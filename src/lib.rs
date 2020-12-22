@@ -10,15 +10,12 @@
 //! # use async_std::prelude::FutureExt;
 //! use async_reply::Message;
 //!
-//! #[derive(Debug)]
+//! #[derive(Debug, Message)]
+//! #[rtype(response = "Pong")]
 //! struct Ping;
 //!
 //! #[derive(Debug)]
 //! struct Pong;
-//!
-//! impl Message for Ping {
-//!     type Response = Pong;
-//! }
 //!
 //! let (requester, replyer) = async_reply::endpoints();
 //!
@@ -43,6 +40,10 @@
 
 use async_std::{channel, prelude::FutureExt, sync::Mutex};
 use std::any::Any;
+
+#[doc(hidden)]
+#[cfg(feature = "derive")]
+pub use async_reply_derive::*;
 
 /// Create a [`Requester`] and [`Replyer`] message endpoints which allow the
 /// sending and receiving of typed messages.

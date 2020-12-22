@@ -1,0 +1,19 @@
+[package]
+name = "async-reply-derive"
+version = "0.1.0"
+edition = "2018"
+license = "MIT OR Apache-2.0"
+authors = ["Jonathas-Conceicao <jonathas.conceicao@ossystems.com.br>", "Otavio Salvador <otavio.salvador@ossystems.com.br>"]
+description = "Derive macros for `async-reply` messages"
+keywords = ["async", "message", "reply", "derive", "macro"]
+repository = "https://github.com/OSSystems/async-reply-rs"
+documentation = "https://docs.rs/async-reply-derive"
+readme = "README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+syn = { version = "1", features = ["full"] }
+proc-macro2 = "1"

@@ -8,15 +8,12 @@ Allow the sending and reciving of typed messages.
 ```rust
 use async_reply::Message;
 
-#[derive(Debug)]
+#[derive(Debug, Message)]
+#[rtype(response = "Pong")]
 struct Ping;
 
 #[derive(Debug)]
 struct Pong;
-
-impl Message for Ping {
-    type Response = Pong;
-}
 
 let (requester, replyer) = async_reply::endpoints();
 
