@@ -1,4 +1,5 @@
 [![Documentation](https://docs.rs/async-reply/badge.svg)](https://docs.rs/async-reply)
+![CI (Linux)](https://github.com/OSSystems/async-reply-rs/workflows/CI%20(Linux)/badge.svg)
 
 # async-reply
 
