@@ -23,7 +23,7 @@ derive = ["async-reply-derive"]
 
 [dependencies]
 async-reply-derive = { version = "0.1", optional = true }
-async-std = { version = "1", features = ["unstable"] }
+async-std = { version = "1.8", features = ["unstable"] }
 
 derive_more = { version = "0.99", default-features = false, features = ["display", "error", "from"] }
 
