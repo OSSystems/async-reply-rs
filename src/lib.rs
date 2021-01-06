@@ -163,15 +163,15 @@ pub enum Error {
     /// Error to receive the response of sent message.
     #[from(ignore)]
     #[display(transparent)]
-    ReplayError(async_std::channel::RecvError),
+    ReplayError(channel::RecvError),
 
     /// Error while receiving the message.
     #[display(transparent)]
-    ReceivError(async_std::channel::RecvError),
+    ReceivError(channel::RecvError),
 }
 
 impl<T> From<channel::SendError<T>> for Error {
-    fn from(_e: channel::SendError<T>) -> Self {
+    fn from(_: channel::SendError<T>) -> Self {
         // The original error from async_std::channel::Sender carries the undelivered
         // message for recovery. However here we want to avoid raising the arity of
         // the Error type, losing that ability but making the error type more
