@@ -89,20 +89,16 @@ pub trait Message: 'static + Send {
 
 impl Requester {
     /// Send the message and wait its response.
-    pub async fn send<M>(&self, msg: M) -> Result<M::Response, Error<M>>
+    pub async fn send<M>(&self, msg: M) -> Result<M::Response, Error>
     where
         M: Message,
     {
         let (sndr, recv) = channel::bounded::<M::Response>(1);
         let sndr = ReplyHandle(sndr);
 
-        if let Err(e) = self.inner.send(Box::new(MessageHandle { msg, sndr })).await {
-            // We need to convert it here as we need to unwrap the message
-            // type so the error handling can use the message if need.
-            return Err(Error::SendError(channel::SendError(
-                *e.into_inner().downcast::<M>().unwrap(),
-            )));
-        }
+        self.inner
+            .send(Box::new(MessageHandle { msg, sndr }))
+            .await?;
 
         recv.recv().await.map_err(Error::ReplayError)
     }
@@ -110,7 +106,7 @@ impl Requester {
 
 impl Replyer {
     /// Receives the message and provide the handle to respond back.
-    pub async fn recv<M>(&self) -> Result<(M, ReplyHandle<M::Response>), Error<M>>
+    pub async fn recv<M>(&self) -> Result<(M, ReplyHandle<M::Response>), Error>
     where
         M: Message,
     {
@@ -146,7 +142,7 @@ impl Replyer {
 
 impl<T> ReplyHandle<T> {
     /// Respond back to a received message.
-    pub async fn respond(&self, r: T) -> Result<(), Error<T>> {
+    pub async fn respond(&self, r: T) -> Result<(), Error> {
         Ok(self.0.send(r).await?)
     }
 }
@@ -160,10 +156,9 @@ impl<M: Message> MessageHandle<M> {
 /// Encapsulate the errors which can be triggered when sending or receiving a
 /// message.
 #[derive(Debug, derive_more::Display, derive_more::Error, derive_more::From)]
-pub enum Error<T> {
+pub enum Error {
     /// Error while sending the message.
-    #[display(transparent)]
-    SendError(async_std::channel::SendError<T>),
+    SendError,
 
     /// Error to receive the response of sent message.
     #[from(ignore)]
@@ -173,4 +168,14 @@ pub enum Error<T> {
     /// Error while receiving the message.
     #[display(transparent)]
     ReceivError(async_std::channel::RecvError),
+}
+
+impl<T> From<channel::SendError<T>> for Error {
+    fn from(_e: channel::SendError<T>) -> Self {
+        // The original error from async_std::channel::Sender carries the undelivered
+        // message for recovery. However here we want to avoid raising the arity of
+        // the Error type, losing that ability but making the error type more
+        // permissive
+        Error::SendError
+    }
 }
