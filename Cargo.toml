@@ -2,7 +2,7 @@
 name = "async-reply"
 description = "Library to handle typed messages and replies"
 authors = ["Jonathas-Conceicao <jonathas.conceicao@ossystems.com.br>", "Otavio Salvador <otavio.salvador@ossystems.com.br>"]
-version = "0.1.0"
+version = "0.2.0"
 license = "MIT OR Apache-2.0"
 edition = "2018"
 
