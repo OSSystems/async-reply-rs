@@ -162,11 +162,9 @@ pub enum Error {
 
     /// Error to receive the response of sent message.
     #[from(ignore)]
-    #[display(transparent)]
     ReplayError(channel::RecvError),
 
     /// Error while receiving the message.
-    #[display(transparent)]
     ReceivError(channel::RecvError),
 }
 
