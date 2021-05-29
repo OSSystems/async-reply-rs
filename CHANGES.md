@@ -4,6 +4,8 @@
 
 ## [Unreleased] - ReleaseDate
 
+## [0.2.1] - 2021-05-29
+
 ## [0.2.0] - 2021-01-06
 
 * First release
