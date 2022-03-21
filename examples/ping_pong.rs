@@ -27,14 +27,9 @@ async fn main() {
     };
 
     let fut2 = async move {
-        loop {
-            match rep.recv::<Ping>().await {
-                Ok((msg, handle)) => {
-                    println!("Ping: {}", msg.0);
-                    handle.respond(Pong(msg.0 + 1)).await.unwrap();
-                }
-                Err(_) => break,
-            }
+        while let Ok((msg, handle)) = rep.recv::<Ping>().await {
+            println!("Ping: {}", msg.0);
+            handle.respond(Pong(msg.0 + 1)).await.unwrap();
         }
     };
 
